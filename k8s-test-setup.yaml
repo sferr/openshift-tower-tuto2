@@ -7,7 +7,7 @@
     - community.kubernetes
   
   tasks:
-  - name: GET WORKER NODE DETAILS
-    community.kubernetes.k8s_info:
-      kind: Node
-      namespace: default
+    - name: GET WORKER NODE DETAILS
+      community.kubernetes.k8s_info:
+        kind: Node
+        namespace: default
