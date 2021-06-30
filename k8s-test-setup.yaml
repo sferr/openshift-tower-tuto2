@@ -8,6 +8,6 @@
   
   tasks:
     - name: GET WORKER NODE DETAILS
-      kubernetes.k8s_info:
+      k8s_info:
         kind: Node
         namespace: default
