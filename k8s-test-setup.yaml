@@ -11,3 +11,8 @@
       k8s_info:
         kind: Node
         namespace: default
+      register: node_result
+    
+    - name: DISPLAY OUTPUT
+      debug:
+        msg: "{{ node_result }}"
