@@ -1,0 +1,11 @@
+---
+- name: DEPLOY BUSYBOX
+  hosts: localhost
+  gather_facts: no
+  
+  tasks:
+
+  - name: DEPLOY BUSYBOX TO KUBERNETES
+    k8s:
+        definition: "{{ lookup('template', 'busybox.yaml') | from_yaml }}"
+        state: present
