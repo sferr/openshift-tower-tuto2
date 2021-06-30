@@ -18,10 +18,10 @@
         msg: "{{ node_result }}"
     
     - name: SET VARIABLE STORING EKS WORKER NODE ADDRESS
-    set_fact:
-      worker_address: "{{ node_result | json_query(query) }}"
-    vars:
-      query: "resources[].status.addresses"
+      set_fact:
+        worker_address: "{{ node_result | json_query(query) }}"
+      vars:
+        query: "resources[].status.addresses"
   
     - name: DISPLAY EKS WORKER ADDRESS
       debug:
