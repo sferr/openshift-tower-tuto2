@@ -4,10 +4,10 @@
   gather_facts: no
 
   collections: 
-    - community.kubernetes
+    - kubernetes
   
   tasks:
     - name: GET WORKER NODE DETAILS
-      community.kubernetes.k8s_info:
+      kubernetes.k8s_info:
         kind: Node
         namespace: default
