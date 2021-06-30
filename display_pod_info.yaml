@@ -1,0 +1,28 @@
+---
+- name: RETRIEVE POD DETAILS FROM KUBERNETES
+  hosts: localhost
+  gather_facts: no
+  
+  collections: 
+    - kubernetes
+
+  tasks:
+  - name: GET POD DETAILS
+    k8s_info:
+      kind: Pod
+      namespace: default
+    register: pod_result
+
+  - name: DISPLAY OUTPUT
+    debug:
+      msg: "{{ pod_result }}"
+
+  - name: FILTER FOR POD NAME AND STATE
+    set_fact:
+      filtered_result: "{{ pod_result | json_query(query) }}"
+    vars:
+      query: "resources[].{name: status.containerStatuses[].name, status: status.containerStatuses[].state}"
+ 
+  - name: DISPLAY FILTERED RESULTS
+    debug:
+      msg: "{{ filtered_result }}"
