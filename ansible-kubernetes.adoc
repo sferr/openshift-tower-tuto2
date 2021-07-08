@@ -1,0 +1,301 @@
+= Simao's guide to Ansible Tower _Kubernetes module_ : Unofficial Notes
+Simao Ferreira
+v1.0, 2021-07-05
+:description: This definitely has nothing to do with the Government of Canada at all. \
+These are somewhat personal and opinionated notes from Simao Ferreira.
+:organization: Simao Ferreira
+:doctype: book
+// Settings:
+:experimental:
+:reproducible:
+:icons: font
+:listing-caption: Listing
+:chapter-label:
+:sectnums:
+:toc:
+:toclevels: 3
+:xrefstyle: short
+:imagesdir: images
+// ifdef::backend-pdf[]
+:pdf-theme: new-theme.yml
+:pdf-themesdir: {docdir}
+:pdf-fontsdir: pdf-font;GEM_FONTS_DIR
+:title-logo-image: image:arch.png[align=center]
+:source-highlighter: rouge
+:rouge-style: base16.dark
+// endif::[]
+
+[abstract]
+{description}
+
+[cols="^,<.<", frame=none, grid=none]
+|===
+|image:marvin.jpg[scaledwidth="30%"]
+|btn:[ +++<span style="color: #39FF14">DON'T PANIC</span>+++ ]
+|===
+
+Working with Ansible can be hard.
+
+Working with Kubernetes can also be hard.
+
+Working with Ansible Tower on Kubernetes can seem near impossible!
+
+The goal of this guide is to give clear detailed steps in order to easily add packages to Ansible Tower.
+I will cover all the steps to do this whether you are using Tower in a container or Tower in a virtual machine.
+Usually you can probably find procedures for these sorts of things on DigitalOcean or Stack Overflow. But not this. Not that I could find anyhow. Vendor documentation can be sometimes cryptic but nonetheless here is the link that these procedures are based on.
+
+https://docs.ansible.com/ansible-tower/latest/html/upgrade-migration-guide/virtualenv.html 
+
+Also, some space cadet decided to unplug my OpenShift lab so I had to do this on a single node k3 Rancher "cluster". This is why there are no OpenShift screen shots. *Sorry*.
+
+With all that in mind - Let's begin!
+
+== Procedure to add python modules inside Tower on `OpenShift`
+
+The general idea is to create a persistent volume that will be mounted on the web containers and Task of the Tower pod in which we configure a virtual environment. 
+
+Procedure further *at your own risk*. Well, this part does assume you can at least spell kbd:[O,p,e,n,S,h,i,f,t] at least.
+
+If you are here by mistake, quicky hit kbd:[Ctrl,Alt,w] or select menu:File[Quit] and bail out of here!
+
+=== Create a new Python virtual environment (Kubernetes)
+
+. If you are where you are supposed to be then navigate to your `tower` project.
++
+[source,bash]
+----
+> oc project tower
+----
+
+. Create a persistent volume that is mode #((ReadWriteMany RWX))#.
++
+[source,bash]
+----
+> oc create -f postgres-pvc.yml
+----
++
+.postgres-pvc.yml
+[source,yml]
+----
+include::files/my-environment-pvc.yml[]
+----
++
+WARNING: You may need to specify the storage class in order to get an RWX persistent volume claim.
+
+. Modify the `ansible-tower` deployment.
++
+Mount the persistent volume in the 2 containers “`ansible-tower-web`” and “`ansible-tower-task`”.
+Here are the different locations where this configuration must be added. 
++
+.Redacted deployment example
+----
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: ansible-tower
+
+spec:
+[...]
+  template:
+[...]
+    spec:
+[...]
+      containers:
+        - name: ansible-tower-web
+[...]
+            volumeMounts:
+              - name: my-environment1
+                mountPath: /var/lib/awx/venv/my-environment1
+[...]
+        - name: ansible-tower-task
+[...]
+            volumeMounts:
+              - name: my-environment1
+                mountPath: /var/lib/awx/venv/my-environment1
+[...]
+      volumes:
+        - name: my-environment1
+          persistentVolumeClaim:
+            claimName: my-environment1
+[...]
+----
++
+Save the YAML. This _should_ force the Tower Pod to restart. 
+
+. Verify that the mount is now present from a shell session inside the `ansible-tower-web` and `ansible-tower-task` containers.
++
+[source,bash]
+----
+> ls /var/lib/awx/venv
+----
+
+=== Create a new Python virtual environment
+
+NOTE: These steps moving forward will work on both container and traditional deployments. Hopefully you didn't try section 1 on a virtual machine or something. It's also a good time for a icon:beer[] right now.
+
+. From a shell, execute the following to initialize a new python environment. You can actually do this for any path so long as you configure it in the custom virtual environment paths setting in Tower. But for this document I will use the default path.
+.. For python 2
++
+[source,bash]
+----
+> virtualenv /var/lib/awx/venv/my-environment1/
+----
+.. For python 3 (_you should use this one_)
++
+[source,bash]
+----
+> python3 -m venv /var/lib/awx/venv/my-environment1/
+----
++
+Validate in Ansible Tower that the new environment is present. You can apply this at any hierarchical level of your choice, whether it is Organization, Project and even by Job Template.
++
+TIP: You most likely need to log out of Ansible Tower and reconnect in order to see the changes. Also, my screenshot doesn't reflect the same environment paths as this document... deal with it.
++
+image:Ansible-Tower-Kubernetes-example-1.png[]
+
+=== Add Python modules to virtual environment
+
+IMPORTANT: If your environment is offline then pip will probably not work. The offline method is quite different and I don't want to bother writing it out here.
+
+[quote]
+[.lead]
+'```_sigh..._```'
+
+NOTE: Try searching icon:google[link=https://letmegooglethat.com/?q=install+python+modules+without+pip&l=1, window=_blank] https://letmegooglethat.com/?q=install+python+modules+without+pip&l=1[here]
+
+[quote]
+[.lead]
+'```_oh look, it's a stack overflow page_```'
+
+. First install the `Ansible` module (obviously). You can choose the version that meets your needs. Here is the list you can choose from: https://pypi.org/project/ansible/#history (Perhaps stick with 2.9.x if you want to be supported by +++<span style="color: #FF0000">Red Hat</span>+++)
++
+CAUTION: Don't use the system pip... use the one located inside the bin folder from your environment folder.
++
+[source,bash]
+----
+> ./bin/pip3 install "ansible == 2.9.23"
+----
+
+. Then install the `psutil` module needed by Ansible Tower.
++
+[source,bash]
+----
+> ./bin/pip3 install psutil
+----
+
+. You can now install the modules of your choice.
++
+TIP: Such as OpenShift... which also installs Kubernetes. icon:check[]
++
+[source,bash]
+----
+> ./bin/pip3 install openshift
+----
+
+You can create as many virtual environments as you need. If this not enough than repeat this procedure using different mount names.
+
+[quote]
+____
+Are we done?
+
+What is there to do?
+
+Oh, right. How does this work on Tower running in a container?
+____
+
+=== Create a management and installation pod to build modules
+
+We must create a place where it will be possible to add python modules. As a reminder, some modules require compilation with the python-dev and gcc tools. Since these are not present in the base images of Ansible Tower, we will need to create a container with these tools.
+
+I did not create this repository that contains the necessary tools in the directory module-builder from the following Git repo: https://github.com/sferr/openshift-tower-tuto1.git
+
+This repository contains an example of a Kubernetes manifest to instantiate a pod with an image and mounts the virtual environment directory. I deployed this container image on Quay.io, here: https://quay.io/repository/sferr/ansible-module-builder?tab=info *So you don't have to*.
+
+. Clone the repository
++
+[source,bash]
+----
+> git clone https://github.com/sferr/openshift-tower-tuto1.git
+----
+
+. Instantiate the pods with this command
++
+[source,bash]
+----
+> cd openshift-tower-tuto1/
+> oc apply -f module-builder/pod.yaml
+----
++
+NOTE: You can also copy the contents of the Pod.yaml file available in the “module-builder” directory into the OpenShift console's Pods button.
++
+...
++
+TIP: The Pods button is under Workloads...
+
+Once the new Pod is operational, all you have to do is open a terminal and go to the directory
+containing the virtual environment. The new pod will contain a directory `/var/lib/awx/venv/my-environment1` which will be mounted on the same persistent volume as Ansible Tower. Modules added to this
+environment will therefore be automatically available in Ansible Tower.
+
+[quote]
+*Step 1.3* should now work the same... but you probably need to use `./bin/pip` instead of `./bin/pip3`.
+
+== Creating Kubernetes credentials in Tower
+
+Tower does not currently have a native Kubernetes credential type, but it does provide the ability to create custom Credential Types. Kubernetes credentials are typically stored in a Kubeconfig file which is stored locally on the user workstation in the file ~/.kube/config by default. First we need to create a Kubernetes Credential Type, and then create a Credential using the new credential type which stores the contents of the Kubeconfig file.
+
+[quote]
+This part of the prodecure is based on this URL: https://docs.ansible.com/ansible-tower/latest/html/userguide/credential_types.html
+
+=== Credential Type
+
+. Navigate to *Administration > Credential Types* and add a new credential type.
+
+. Enter the following YAML in the Input Configuration:
++
+.input configuration
+----
+---
+fields:
+  - id: kube_config
+    type: string
+    label: kubeconfig
+    secret: true
+    multiline: true
+required:
+  - kube_config
+----
+
+. Enter the following YAML in the Injector Configuration:
++
+.injector configuration
+----
+---
+env:
+  K8S_AUTH_KUBECONFIG: "{{ tower.filename.kubeconfig }}"
+file:
+  template.kubeconfig: "{{ kube_config }}"
+----
++
+When complete the configuration should look similar to the image below:
+image:Ansible-Tower-Kubernetes-example-2.png[scaledwidth="75%"]
+
+=== Credential
+
+. Navigate to Credentials and add a new Credential
+
+. In the Credential Type, select the Kubernetes custom Credential Type that was just created. In the Kubeconfig field, copy/paste the contents of your Kubeconfig file. Your configuration should look similar to the following:
++
+image:Ansible-Tower-Kubernetes-example-3.png[scaledwidth="75%"]
+
+
+.Brought to you with icon:heart[2x,set=fas,role=red] by me.
+[%header%footer,cols="2,2s,^4",grid=rows,frame=ends,width=100%,caption=]
+|===
+|Name |Title |Alias
+
+|Simao Ferreira
+|Techy of the Galaxy
+|http://twitter.com/simao_f[@simao_f]
+
+3+^.e|Powered by Open Source
+|===
