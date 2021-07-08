@@ -287,6 +287,43 @@ image:Ansible-Tower-Kubernetes-example-2.png[scaledwidth="75%"]
 +
 image:Ansible-Tower-Kubernetes-example-3.png[scaledwidth="75%"]
 
+== Ansible Playbook Examples
+
+[quote]
+These examples (and this documentation) can be found here: https://github.com/sferr/openshift-tower-tuto2
+
+=== Playbook example 1
+
+.k8s-test-setup.yaml
+[source,yml]
+----
+include::k8s-test-setup.yaml[]
+----
+
+image:Ansible-Tower-Kubernetes-example-4.png[]
+
+=== Playbook example 2
+
+.deploy-busybox.yaml
+[source,yml]
+----
+include::deploy-busybox.yaml[]
+----
+
+image:Ansible-Tower-Kubernetes-example-5.png[]
+
+=== Playbook example 3
+
+.display_pod_info.yaml
+[source,yml]
+----
+include::display_pod_info.yaml[]
+----
+
+image:Ansible-Tower-Kubernetes-example-6.png[]
+
+[quote]
+I hope this guide provides some useful information on how to get up and running quickly automating Kubernetes with Ansible Tower!
 
 .Brought to you with icon:heart[2x,set=fas,role=red] by me.
 [%header%footer,cols="2,2s,^4",grid=rows,frame=ends,width=100%,caption=]
