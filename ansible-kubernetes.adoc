@@ -167,7 +167,7 @@ NOTE: Try searching icon:google[link=https://letmegooglethat.com/?q=install+pyth
 [.lead]
 '```_oh look, it's a stack overflow page_```'
 
-. First install the `Ansible` module (obviously). You can choose the version that meets your needs. Here is the list you can choose from: https://pypi.org/project/ansible/#history (Perhaps stick with 2.9.x if you want to be supported by +++<span style="color: #FF0000">Red Hat</span>+++)
+. First install the `Ansible` module (obviously). You can choose the version that meets your needs. Here is the list you can choose from: https://pypi.org/project/ansible/#history (Perhaps stick with 2.9.x if you want to be supported by *+++<span style="color: #FF0000">Red Hat</span>+++)*
 +
 CAUTION: Don't use the system pip... use the one located inside the bin folder from your environment folder.
 +
@@ -294,15 +294,25 @@ These examples (and this documentation) can be found here: https://github.com/sf
 
 === Playbook example 1
 
+In this first example we will determine if the credentials work and if so the next few tasks will gather data from the nodes and output their hostname and IP. The playbook I used is below:
+
 .k8s-test-setup.yaml
 [source,yml]
 ----
 include::k8s-test-setup.yaml[]
 ----
 
+And here is the output I got within Tower.
+
+image:Ansible-Tower-Kubernetes-example-7.png[]
+
+Pretty cool! Let's check Rancher and see if it's accurate. Looks good! And yes, the hostname is also the IP address in my case.
+
 image:Ansible-Tower-Kubernetes-example-4.png[]
 
 === Playbook example 2
+
+In this second example we're just going to deploy a simple application from YAML. Behold, the playbook:
 
 .deploy-busybox.yaml
 [source,yml]
@@ -310,15 +320,38 @@ image:Ansible-Tower-Kubernetes-example-4.png[]
 include::deploy-busybox.yaml[]
 ----
 
+Okay that doesn't look like much... behold the Kubernetes YAML:
+
+.busybox.yaml
+[source,yml]
+----
+include::busybox.yaml[]
+----
+
+Okay, okay it's still not that impressive. But it does the job and below you will see that the containerized application is *+++<span style="color: #32CD32">RUNNING</span>+++*.
+
+image:Ansible-Tower-Kubernetes-example-8.png[]
+
 image:Ansible-Tower-Kubernetes-example-5.png[]
 
 === Playbook example 3
+
+In the final example we're just going to collect all the details from the pod and show the output. The playbook:
 
 .display_pod_info.yaml
 [source,yml]
 ----
 include::display_pod_info.yaml[]
 ----
+
+The output in Tower:
+
+image:Ansible-Tower-Kubernetes-example-9.png[]
+
+And then the confirmation that the data matches!
+
+[quote]
+Okay it doesn't match at all and I could have showed more data in the Tower output. But A. I didn't want to add extra pages of just data output to this doc and B. I ran the two on different days and the pod restarted a bunch of times in the time between.
 
 image:Ansible-Tower-Kubernetes-example-6.png[]
 
